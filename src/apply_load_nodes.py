@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[4]:
-
-
 # Handling
 import pandas as pd
 import requests 
@@ -23,12 +17,13 @@ import matplotlib.pyplot as plt
 warnings.filterwarnings('ignore')
 
 # Moduel
-from selectDatasetFluid import *
+from select_dataset import *
 from calculateRiskIndex import *
-from loadDatabase import *
+from load_database import *
 
-
-# In[2]:
+import pandas as pd
+from sklearn.neighbors import KDTree
+import numpy as np
 
 
 def load_nodes(df):
@@ -49,13 +44,6 @@ def load_nodes(df):
     #2. 격자 노드 적재
     load_database(node,'nodes')
 
-
-# In[12]:
-
-
-import pandas as pd
-from sklearn.neighbors import KDTree
-import numpy as np
 
 def create_graph(df, radius=0.40):
     # 좌표를 radians로 변환 (KDTree는 이를 요구함)

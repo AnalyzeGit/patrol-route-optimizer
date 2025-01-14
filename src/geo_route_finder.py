@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[13]:
-
-
 # Handling
 import pandas as pd
 import requests 
@@ -23,9 +17,9 @@ import matplotlib.pyplot as plt
 warnings.filterwarnings('ignore')
 
 # Moduel
-from selectDatasetFluid import *
+from select_dataset import *
 from calculateRiskIndex import *
-from loadDatabase import *
+from load_database import *
 
 
 # <span style='background-color:rgba(0,0,255,0.3); color:white; padding: 5px; border-radius:5px;'> 알고리즘 프로세스 </span>
@@ -37,10 +31,6 @@ from loadDatabase import *
 # * 휴리스틱 산출 함수 
 # * 경로 찾기 알고리즘 
 
-# <span style='border:0.5px solid black; padding:5px; border-radius:5px;'> 노드 클래스 저장 및 로드  </span>
-
-# In[14]:
-
 
 def save_nodes(file_name,nodes):
     # 사용 x
@@ -50,9 +40,6 @@ def save_nodes(file_name,nodes):
         pickle.dump(nodes, f)
 
 
-# In[15]:
-
-
 def load_nodes(file_name):
     with open(f'{file_name}.pickle', 'rb') as f:
         loaded_obj  = pickle.load(f)
@@ -60,9 +47,6 @@ def load_nodes(file_name):
 
 
 # <span style='border:0.5px solid black; padding:5px; border-radius:5px;'> 주소 → 위도, 경도 반환 알고리즘  </span>
-
-# In[16]:
-
 
 def get_latitude_longitude(address):
     """
@@ -97,9 +81,6 @@ def get_latitude_longitude(address):
         return (None, None)
 
 
-# In[17]:
-
-
 def look_for_nearby_location(target_lon,target_lat):
     
     # 1. 격자 데이터 로드
@@ -129,9 +110,6 @@ def look_for_nearby_location(target_lon,target_lat):
     return closest_lon, closest_lat, closest_grid, closest_district
 
 
-# In[18]:
-
-
 def find_objective_grid(address):
     
     # 검색어를 통한 위도, 경도 추출
@@ -144,8 +122,6 @@ def find_objective_grid(address):
 
 
 # <span style='border:0.5px solid black; padding:5px; border-radius:5px;'> 노드 클래스 생성 </span>
-
-# In[19]:
 
 
 class Node:
@@ -165,8 +141,6 @@ class Node:
 
 
 # <span style='border:0.5px solid black; padding:5px; border-radius:5px;'> 격자 이웃 거리 산출 알고리즘  </span>
-
-# In[20]:
 
 
 # 격자의 이웃을 결정하기 위한 함수를 정의합니다.
@@ -188,9 +162,6 @@ def haversine(lon1, lat1, lon2, lat2):
 
 # <span style='border:0.5px solid black; padding:5px; border-radius:5px;'> 휴리스틱 산출 함수 </span>
 
-# In[21]:
-
-
 # 휴리스틱 함수를 정의합니다.
 def heuristic(node, goal):
     return haversine(node.lon, node.lat, goal.lon, goal.lat)
@@ -204,9 +175,6 @@ def initialize_a_star(start_node,goal_node):
 
 
 # <span style='border:0.5px solid black; padding:5px; border-radius:5px;'> 노드 생성 알고리즘  </span>
-
-# In[22]:
-
 
 # 각 격자를 노드로 변환하고 이웃을 할당하는 함수를 정의합니다.
 def create_grapha(df, radius=0.45):
@@ -227,10 +195,6 @@ def create_grapha(df, radius=0.45):
                     node.add_neighbor(potential_neighbor)
 
     return nodes
-
-
-# In[23]:
-
 
 # 각 격자의 Nodes를 반환함
 def classify_nodes():
@@ -265,9 +229,6 @@ def classify_nodes():
 
 # <span style='border:0.5px solid black; padding:5px; border-radius:5px;'> 경로 찾기 알고리즘  </span>
 
-# In[24]:
-
-
 def calculate_by_proportion(tentative_g_score,heuristic):
     """ 격자 점수와 격자와 목적지의 거리를 비율로 산출 
     """
@@ -279,15 +240,14 @@ def calculate_by_proportion(tentative_g_score,heuristic):
     
     return tentative_g_score_ratio,heuristic_ratio
 
-
-# In[52]:
-
-
 # Given the previously defined Node class, create_graph, and heuristic function,
 # let's attempt to define the A* search algorithm once more, which will output
 # only the latitude and longitude for the optimal path.
 
 def a_star_search(start, goal):
+    
+    # 비용함수 추적 리스트
+    neighbor_f_bowl = []
     
     print('시작')
     initialize_a_star(start,goal)  # 시작 노드의 g 값을 0으로 초기화
@@ -299,7 +259,6 @@ def a_star_search(start, goal):
     while open_set:
         # Pop the node with the lowest f score
         current_f, current = heapq.heappop(open_set)
-        #print(f'현재 노드:{current.id} /  현재 이동 비용(g):{current.g} / 현재 비용 함수(f):{current_f}')
         
         # If the goal has been reached, reconstruct and return the path
         if current == goal:
@@ -316,9 +275,8 @@ def a_star_search(start, goal):
             # The distance from start to a neighbor
             # tentative_g_score = current.g + neighbor.rank / 총 이동비용 
             tentative_g_score = neighbor.rank #현재 격자 이동비용
-            #print(f'이웃노드:{neighbor.id}/ 이웃노드 순위:{neighbor.rank} / 이웃노드 이동 비용(g):{tentative_g_score}')
             
-            #print(f'tentative_g_score:{tentative_g_score}, neighbor.g:{neighbor.g}')
+        
             # If this path to neighbor is better than any previous one, record it
             if tentative_g_score < neighbor.g:
                 neighbor.parent = current
@@ -326,27 +284,18 @@ def a_star_search(start, goal):
                 tentative_g_score_ratio,heuristic_ratio = calculate_by_proportion(tentative_g_score,heuristic(neighbor, goal))
                 neighbor.f = (tentative_g_score_ratio*0.25) + (heuristic_ratio*0.75)
                 #neighbor.f = tentative_g_score + heuristic(neighbor, goal)
-                print(f'이웃 노드의 비용 함수(f):{neighbor.f}')
+                #print(f'이웃 노드의 비용 함수(f):{neighbor.f}')
                 
                 if neighbor.f not in neighbor_f_bowl:
                     heapq.heappush(open_set, (neighbor.f, neighbor))
                     # 비용함수 추가
                     neighbor_f_bowl.append(neighbor.f)
-                
-                
-                #print("조건 추가")
+
     # 만약 우리가 여기 있다면 목표를 달성하기 위한 길은 없다
     return []
 
 
 # <span style='border:0.5px solid black; padding:5px; border-radius:5px;'> 경로 찾기 알고리즘 적용 </span>
-
-# In[53]:
-
-
-
-# In[54]:
-
 
 def find_best_route(start_address,arrival_address):
     
@@ -376,7 +325,3 @@ def find_best_route(start_address,arrival_address):
     jason = combine_dictionaries(throw_jason,mean_jason)
     
     return optimal_path,jason
-
-
-
-

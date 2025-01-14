@@ -1,7 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[2]:
 
 
 # Handling
@@ -9,7 +5,6 @@ import pandas as pd
 import numpy as np
 
 
-# In[3]:
 
 
 def preprocess_point(df,col):

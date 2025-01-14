@@ -1,19 +1,13 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
 
 # Handling
 import pandas as pd
 
 # Module
-from loadDatabase import *
+from load_database import *
 from preprocessingPoint import *
-from selectDatasetFluid import *
+from select_dataset import *
 
 # Gis
-
 import geopandas as gpd
 
 # Preprocessing
@@ -23,8 +17,7 @@ from sklearn.preprocessing import StandardScaler
 from math import radians, cos, sin, asin, sqrt
 
 
-# In[2]:
-
+import matplotlib.pyplot as plt
 
 # Action: 표준화 함수 생성
 
@@ -39,9 +32,6 @@ def standardize(data,col_list):
     return data
 
 
-# In[3]:
-
-
 def calculate_gradient_effect(data,gradient):
     
     # 마지막 순위 추출
@@ -51,9 +41,6 @@ def calculate_gradient_effect(data,gradient):
     data.loc[data['GRADIENT']>=gradient, 'RANK'] = rank_max
     
     return data
-
-
-# In[4]:
 
 
 def reset_values(data):
@@ -68,21 +55,6 @@ def reset_values(data):
     
     return data
 
-
-# <span style = 'background-color:rgba(0,0,255,0.3); color:white; padding:5px; border-radius:5px;'> 프로세스 </span>
-# 1. 데이터 로드
-# 2. 데이터 전처리
-# 3. 데이터 병합
-# 4. 점수 계산
-# 5. 데이터 적재
-# 6. 알고리즘 개발
-
-# <span style = 'border:0.5px solid black; padding:5px; border-radius:5px;'>  1. 데이터 로드 </span>
-
-# In[5]:
-
-
-# Action: 데이터 로드
 
 # 1.1 그리드 - 안전센터와의 거리
 grid_safety_center = get_dataframe_from_database_fluid('an_distance_safety_center')
@@ -106,13 +78,8 @@ grid_safety_facilities = get_dataframe_from_database_fluid('an_distance_score_fa
 grid_safety_cctv = get_dataframe_from_database_fluid('an_numpoins_cctv') # 23살
 
 
-# <span style = 'border:0.5px solid black; padding:5px; border-radius:5px;'>  2. 데이터 전처리 </span>
-
-# In[6]:
-
 
 # Action: 데이터 전처리
-
 # 2.1 데이터 그룹화
 grid_safety_center = grid_safety_center.groupby('INPUT_ID').mean()[['DISTANCE']].reset_index() # 안전센터 거리 그룹화
 grid_safety_emergency_bell = grid_safety_emergency_bell.groupby('INPUT_ID').mean()[['DISTANCE']].reset_index() # 비상벨 거리 그룹화
@@ -135,13 +102,7 @@ grid_safety_cctv['NUMBER_OF_CCTV']  = grid_safety_cctv['NUMBER_OF_CCTV'] + 1
 grid_safety_cctv['NUMBER_OF_CCTV'] = 1/ grid_safety_cctv['NUMBER_OF_CCTV']
 
 
-# <span style = 'border:0.5px solid black; padding:5px; border-radius:5px;'>  3. 데이터 병합 </span>
-
-# In[7]:
-
-
 # Action: 데이터 병합
-
 # 3.1 안전센터, 비상벨 병합
 merge = pd.merge(grid_safety_emergency_bell,grid_safety_center,on='ID',how='left')
 
@@ -161,13 +122,7 @@ merged = pd.merge(mergec, grid_safety_facilities[['ID','GRID_FACILITIES_DISTANCE
 mergee = pd.merge(merged, grid_safety_cctv[['ID','NUMBER_OF_CCTV']], on='ID', how='left')
 
 
-# <span style = 'border:0.5px solid black; padding:5px; border-radius:5px;'>  4. 점수 계산 </span>
-
-# In[8]:
-
-
 # Action: 처리 전 데이터 정제
-
 # 1 .변수 순서 변경
 mergee = mergee[['ID','EMERGENCY_BELL_AND_DISTANCE','SAFETY_CENTER_AND_DISTANCE','GRID_SHELTER_DISTANCE_SCORE','GRID_FACILITIES_DISTANCE_SCORE','NUMBER_OF_CCTV','LON','LAT','DISTRICT']]
 
@@ -175,12 +130,7 @@ mergee = mergee[['ID','EMERGENCY_BELL_AND_DISTANCE','SAFETY_CENTER_AND_DISTANCE'
 standarize_list = ['EMERGENCY_BELL_AND_DISTANCE','SAFETY_CENTER_AND_DISTANCE','GRID_SHELTER_DISTANCE_SCORE','GRID_FACILITIES_DISTANCE_SCORE','NUMBER_OF_CCTV'] # 스케일 사용 변수
 standarize_data = standardize(mergee,standarize_list) # 표준화
 
-
-# In[9]:
-
-
 # Action: 점수 계산
-
 # 1. 점수 계산  
 standarize_data['SCORE'] = standarize_data['EMERGENCY_BELL_AND_DISTANCE'] + standarize_data['SAFETY_CENTER_AND_DISTANCE'] + standarize_data['GRID_SHELTER_DISTANCE_SCORE'] 
 +  standarize_data['GRID_FACILITIES_DISTANCE_SCORE'] + standarize_data['NUMBER_OF_CCTV']
@@ -197,12 +147,7 @@ standarize_data = reset_values(standarize_data)
 
 #standarize_data['RANK'] = labels
 
-
-# In[10]:
-
-
 # Action: 구간화
-
 # 1. 데이터 시리즈를 9개의 균등한 구간으로 구간화
 labels = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
@@ -213,49 +158,23 @@ categories = pd.cut(standarize_data['SCORE'], 9,  labels=labels)
 standarize_data['SCORE_CATEGORY'] = categories
 
 
-# <span style = 'border:0.5px solid black; padding:5px; border-radius:5px;'>  5. 데이터 적재 </span>
-
-# In[25]:
-
-
-# Action: 데이터 저장
-
 standarize_data.to_csv('서울시_점수.csv',index=False)
-
-
-# In[11]:
-
 
 # Action: DB 적재
 
 load_database(standarize_data,'an_rank')
 
 
-# <span style = 'border:0.5px solid black; padding:5px; border-radius:5px;'>  6. 알고리즘 개발(사용 X) </span>
-
-# In[12]:
-
-
 # Action: 경도, 위도 변환
-
 # 경도, 위도 연속형 변수 변환
-
 standarize_data['LON'] = standarize_data['LON'].astype(float)
 standarize_data['LAT'] = standarize_data['LAT'].astype(float)
 
 
-# In[36]:
-
-
 # Action: 경도, 위도 변환
-
 # 경도, 위도 연속형 변수 변환
-
 standarize_data['LON'] = standarize_data['LON'].astype(float)
 standarize_data['LAT'] = standarize_data['LAT'].astype(float)
-
-
-# In[37]:
 
 
 def haversine(lon1, lat1, lon2, lat2):
@@ -278,11 +197,7 @@ current_lon, current_lat = test[['LON','LAT']].values[0]
 standarize_data['거리(km)'] = standarize_data.apply(lambda x: haversine(current_lon, current_lat, x['LON'], x['LAT']), axis=1)
 
 
-# In[38]:
-
-
 # Action: 거리를 기준으로 정렬 및 RANK 조건을 이용한 추출
-
 # 거리 순서 정렬
 standarize_data = standarize_data.sort_values(by=['거리(km)','RANK'])
 
@@ -295,11 +210,6 @@ lonc, latc = valid_locations_indices.iloc[2][['LON','LAT']]
 lond, latd = valid_locations_indices.iloc[3][['LON','LAT']]
 lone, late = valid_locations_indices.iloc[4][['LON','LAT']]
 
-
-# In[40]:
-
-
-import matplotlib.pyplot as plt
 
 plt.figure(figsize=(8, 6))
 plt.scatter(standarize_data['LON'], standarize_data['LAT'], c='blue', label='위치')

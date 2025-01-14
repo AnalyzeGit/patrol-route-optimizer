@@ -1,18 +1,9 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[79]:
-
-
 # Handling
 import numpy as np
 import json
 
 # Moduel 
-from selectDatasetFluid import *
-
-
-# In[40]:
+from select_dataset import *
 
 
 def extract_optimized_path_data(optimal_path):
@@ -43,10 +34,6 @@ def extract_optimized_path_data(optimal_path):
     concat = concat.drop_duplicates(subset=check_columns)
     
     return concat,data
-
-
-# In[41]:
-
 
 def calculate_risk_scoresa(optimal_path):
         
@@ -86,9 +73,6 @@ def calculate_risk_scoresa(optimal_path):
                          'GRID_SHELTER_DISTANCE_SCORE_SCORE','GRID_FACILITIES_DISTANCE_SCORE_SCORE','NUMBER_OF_CCTV_SCORE']]
         
         return high_ranking_data
-
-
-# In[112]:
 
 
 def calculate_risk_scores(optimal_path):
@@ -151,18 +135,12 @@ def calculate_risk_scores(optimal_path):
         return pd.DataFrame()  # 에러 시 빈 데이터프레임 반환
 
 
-# In[110]:
-
-
 def throw_tuple_price(data):
     
     # 각 행을 튜플로 변환하여 리스트에 추가
     tuples_list = [tuple(row) for row in data.itertuples(index=False, name=None)]
     
     return tuples_list
-
-
-# In[121]:
 
 
 def convert_jason(data_tuples):
